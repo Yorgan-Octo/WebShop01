@@ -16,21 +16,23 @@ namespace BLL.Services
         }
         public async Task<bool> CreateCategory(Category entity)
         {
-            throw new NotImplementedException();
+            return await _categoryRepository.Create(entity);
         }
 
         public async Task<bool> DeleteCategory(Category entity)
         {
-            throw new NotImplementedException();
+            return await _categoryRepository.Delete(entity);
         }
 
         public async Task<Category> GetCategoryById(Guid id)
         {
-            throw new NotImplementedException();
+            return await _categoryRepository.GetById(id);
         }
         public async Task<Category> GetCategoryByName(string category)
         {
-            throw new NotImplementedException();
+            var rer = await _categoryRepository.Select();
+
+            return rer.Where(x => x.Name == category);
         }
 
         public async Task<IEnumerable<Category>> AllCategories()
@@ -40,12 +42,28 @@ namespace BLL.Services
 
         public async Task<Category> UpdateCategory(Category entity)
         {
-            throw new NotImplementedException();
+            return await _categoryRepository.Update(entity);
         }
 
         public async Task<CategoryInfo> GetCategoryInfoByName(string category)
         {
-            throw new NotImplementedException();
+            var categoryEntity = (await _categoryRepository.SelectIncludeProducts()).FirstOrDefault(c => c.Name == category);
+            var keyWords = (await _keyParamsRepository.SelectIncludeWords())
+                .Where(k => categoryEntity.Products.Any(p => p.Id == k.Product.Id))
+                .Select(k => k.KeyWords.KeyWord)
+                .Distinct();
+
+            return new CategoryInfo
+            {
+                CategoryName = category,
+                Selections = new Dictionary<string, string[]>
+                {
+                    { category, keyWords.ToArray() }
+                },
+
+                MinPrice = categoryEntity.Products.Min(x => x.Price),
+                MaxPrice = categoryEntity.Products.Max(x => x.Price)
+            };
         }
     }
 }
